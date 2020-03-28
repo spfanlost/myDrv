@@ -1,0 +1,97 @@
+/**
+ * @file my_drv.c
+ * @author meng_yu (imyumeng@qq.com)
+ * @brief 
+ * @version 0.1
+ * @date 2020-03-15
+ * 
+ * @copyright imyumeng@qq.com Copyright (c) 2020
+ * 
+ */
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h> //define module_ini
+#include <linux/cdev.h>
+#include <linux/fs.h> //file_operations structure define in tjis header file
+#include <linux/unistd.h>
+#include <linux/types.h>
+#include <linux/fcntl.h>
+#include <linux/device.h>
+#include <linux/errno.h>
+#include <linux/mman.h>
+
+#include "my_drv.h"
+
+#define DRV_NAME "my_drv"
+#define DEV_NAME "my_dev"
+#define CLS_NAME "my_cls"
+
+static int my_major;
+static int major = 250;
+static int minor = 0;
+static dev_t devno;
+static struct class *class_drv;
+static struct device *my_device;
+
+static int my_drv_open(struct inode *inode, struct file *fl)
+{
+    //int major_id = 0;
+    LOG_DBG("%s", __FUNCTION__);
+    return 0;
+}
+
+static const struct file_operations my_drv_fops = {
+    .owner = THIS_MODULE,
+    .open = my_drv_open,
+};
+
+static int __init my_drv_init(void)
+{
+    int ret = 0;
+    LOG_DBG("%s", __FUNCTION__);
+
+    devno = MKDEV(major, minor);
+    /* Get a dynamically alloc'd major number for this driver */
+    my_major = register_chrdev(major, DEV_NAME, &my_drv_fops);
+    if (my_major < 0)
+    {
+        LOG_ERR("char device driver registration fail");
+        return -ENODEV;
+    }
+    /* Check if class_drv creation has any issues */
+    class_drv = class_create(THIS_MODULE, CLS_NAME);
+    if (IS_ERR(class_drv))
+    {
+        LOG_ERR("class creation failed");
+        ret = PTR_ERR(class_drv);
+        goto unreg_chrdrv_fail_out;
+    }
+    /* Register this driver */
+    my_device = device_create(class_drv, NULL, devno, NULL, DEV_NAME); //mknod /dev/hello
+    if (IS_ERR(my_device))
+    {
+        LOG_ERR("device creation failed");
+        goto class_create_fail_out;
+    }
+    return ret;
+
+class_create_fail_out:
+    class_destroy(class_drv);
+unreg_chrdrv_fail_out:
+    unregister_chrdev(my_major, DEV_NAME);
+    return ret;
+}
+
+static void __exit my_drv_exit(void)
+{
+    device_destroy(class_drv, devno);
+    class_destroy(class_drv);
+    unregister_chrdev(major, DRV_NAME);
+    LOG_DBG("%s", __FUNCTION__);
+}
+
+module_init(my_drv_init);
+module_exit(my_drv_exit);
+
+MODULE_AUTHOR("YM");
+MODULE_LICENSE("GPL");
