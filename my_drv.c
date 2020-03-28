@@ -33,10 +33,10 @@ static struct class *class_nvme;
 char message[MAX_SIZE] = {0};
 static int __init dev_init(void);
 static void __exit dev_exit(void);
-int my_open(struct inode *inode, struct file *filp);
+int my_open(struct inode *inode, struct file *file);
 int my_release(struct inode *inode, struct file *file);
-ssize_t my_read(struct file *file, char __user *user, size_t t, loff_t *f);
-ssize_t my_write(struct file *file, const char __user *user, size_t t, loff_t *f);
+ssize_t my_read(struct file *file, char __user *user, size_t count, loff_t *f);
+ssize_t my_write(struct file *file, const char __user *user, size_t count, loff_t *f);
 
 MODULE_AUTHOR("YM");
 MODULE_LICENSE("GPL");
@@ -93,7 +93,7 @@ static void __exit dev_exit(void)
     LOG_DBG("dev_exit");
 }
 
-int my_open(struct inode *inode, struct file *filp)
+int my_open(struct inode *inode, struct file *file)
 {
     int err = 0;
     LOG_DBG("Opening device");
@@ -117,18 +117,18 @@ ssize_t my_read(struct file *file, char __user *user, size_t count, loff_t *f)
 
     buf_len = ARRAY_SIZE(message);
 
-    if(buf_len < count)
+    if (buf_len < count)
         count = buf_len;
 
     LOG_DBG("my_drv read len:%ld", count);
-        
-    if(copy_to_user(user, message, count))
+
+    if (copy_to_user(user, message, count))
     {
         return -EFAULT;
     }
 
     buf_len = count;
-    for(i = 0; i < buf_len;i++)
+    for (i = 0; i < buf_len; i++)
         LOG_DBG("my_drv read val[%d]=%d", i, message[i]);
 
     return 0;
@@ -140,21 +140,21 @@ ssize_t my_write(struct file *file, const char __user *user, size_t count, loff_
     unsigned int i = 0;
 
     LOG_DBG("write device!\n");
-    
+
     buf_len = ARRAY_SIZE(message);
-    
-    if(buf_len < count)
+
+    if (buf_len < count)
         count = buf_len;
-    
+
     LOG_DBG("my_drv write buf len:%ld", count);
 
-    if(copy_from_user(message, user, count))
+    if (copy_from_user(message, user, count))
     {
         return -EFAULT;
     }
-    
+
     buf_len = count;
-    for(i = 0; i < buf_len;i++)
+    for (i = 0; i < buf_len; i++)
         LOG_DBG("my_drv write val[%d]=%d", i, message[i]);
 
     return 0;

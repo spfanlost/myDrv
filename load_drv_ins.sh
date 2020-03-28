@@ -7,5 +7,5 @@ sudo insmod $insmodule.ko #|| exit 1
 echo "load driver: $insmodule.ko OK!^_^"
 
 # 4.增加自己的模块
-# 　　mknod /dev/Driver c 243 0    //243为设备号  Driver是设备名
+# 　　mknod /dev/dev_meng c 239 0    //239为设备号 dev_meng是设备名
 
